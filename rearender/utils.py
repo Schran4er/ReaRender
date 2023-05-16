@@ -8,6 +8,11 @@ import beyond.Reaper
 from copy import deepcopy
 from rearender.autogui import click_window
 
+import press_enter
+
+import threading
+import time
+
 
 def traverse_dir(
         root_dir,
@@ -18,7 +23,6 @@ def traverse_dir(
         verbose=False,
         is_sort=False,
         is_ext=True):
-
     if verbose:
         print('[*] Scanning...')
     file_list = []
@@ -32,7 +36,8 @@ def traverse_dir(
                     if str_ not in file:
                         continue
                 mix_path = os.path.join(root, file)
-                pure_path = mix_path[len(root_dir)+1:] if is_pure else mix_path
+                # pure_path = mix_path[len(root_dir)+1:] if is_pure else mix_path
+                pure_path = mix_path[len(root_dir):] if is_pure else mix_path
                 if not is_ext:
                     ext = pure_path.split('.')[-1]
                     pure_path = pure_path[:-(len(ext)+1)]
@@ -56,7 +61,7 @@ def set_gobal_bpm(bpm):
 
 
 def clear_all():
-    # delet items
+    # delete items
     Reaper.Main_OnCommand(40035, 0)
     Reaper.Main_OnCommand(40006, 0)
     
@@ -83,16 +88,23 @@ def set_track_media(path_track, tidx, is_press=False):
     Reaper.InsertMedia(path_track, 0)
 
 
+
+
 def render_media(
         path_media, 
         path_audio, 
         bpm=None, 
         is_press=False, 
-        track_idx=0):
+        track_idx=0,
+        already_open=True):
     '''
     function for rendering single track midi file or audio file
     the media will be inserted in the 1st track
     '''
+    print("...rendering...")
+
+    if not already_open:
+        Reaper.Main_openProject("noprompt:C:/Users/Alex/AppData/Roaming/REAPER/ProjectTemplates/render.rpp")
 
     clear_all()
     move_cursor_start()
@@ -100,9 +112,10 @@ def render_media(
     # set bpm
     if bpm:
         set_gobal_bpm(int(bpm))
-   
+
     # set media
     set_track_media(path_media, track_idx, is_press=is_press)
+
     
     # set audio filename
     filename = os.path.basename(path_audio)
@@ -115,6 +128,7 @@ def render_media(
     # save
     Reaper.Main_OnCommand(40296, 0) # select all
     Reaper.Main_OnCommand(41824, 0) # render project
+
 
 
 def render_multi_media(
